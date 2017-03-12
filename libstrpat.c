@@ -101,8 +101,8 @@ string_pat_compile (unsigned char *pat, const char *desc)
 	}
 	buf[j] = '\0';
 	
-	const size_t buf_len = strlen (buf);
-	pat = malloc (sizeof (char) * (buf_len + 1));
+	const size_t buf_len = strlen (buf) + 1;
+	pat = malloc (sizeof (char) * buf_len);
 	return memcpy (pat, buf, buf_len);
 }
 
@@ -146,20 +146,21 @@ string_pat_match_char (const char c, const unsigned char **pat_cur)
 bool
 string_pat_match (const char *str, const unsigned char *pat)
 {
-	const size_t str_len = strlen (str);
+	const char *str_cur = str;
 	const unsigned char *pat_cur = pat;
 	
-	for (size_t i = 0; i < str_len && *pat_cur; i++)
+	while (*str_cur && *pat_cur)
 	{
-		if (!string_pat_match_char (str[i], &pat_cur))
+		if (!string_pat_match_char (*str_cur, &pat_cur))
 		{
 			if (*pat_cur < 200)
 			{
 				return false;
 			}
 			pat_cur++;
-			i--;
+			str_cur--;
 		}
+		str_cur++;
 	}
 	return true;
 }
