@@ -42,6 +42,7 @@ string_match_end (const char *str, const char *pat)
 
 /**
  * string_pat_compile()
+ * @pat - Will hold the compiled pattern.
  * @desc - Pattern to compile.
  *
  * Compiles the pattern described by @desc for
