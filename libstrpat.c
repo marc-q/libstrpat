@@ -102,7 +102,7 @@ string_pat_compile (unsigned char *pat, const char *desc)
 	buf[j] = '\0';
 	
 	const size_t buf_len = strlen (buf);
-	pat = malloc (sizeof (char) * buf_len + 1);
+	pat = malloc (sizeof (char) * (buf_len + 1));
 	return memcpy (pat, buf, buf_len);
 }
 
