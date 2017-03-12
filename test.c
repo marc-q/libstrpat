@@ -36,5 +36,7 @@ main (int argc, char *argv[])
 	test_pattern ("1. Punkt eins.", "[:digit:]. [:alnum:]");
 	test_pattern (" 2. Punkt zwei.", "[:digit:]. [:alnum:]");
 	
+	test_pattern ("user@localhost.local", "[:alnum:]@[:alnum:].[:alpha:]");
+	
 	return 0;
 }
