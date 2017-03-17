@@ -49,16 +49,19 @@ string_match_end (const char *str, const char *pat)
  * use with string_pat_match().
  *
  * Classes:
- * [:alnum:] - Alpha numeric
- * [:alpha:] - Alphabetic
- * [:num:] - Numberic
+ * [:alnum:] - checks for an alphanumeric character.
+ * [:alpha:] - checks  for  an  alphabetic  character.
+ * [:digit:] - checks for a digit (0 through 9).
+ * [:print:] - checks for any printable character including space.
+ *
+ * Classes are escaped with a backslash(\). 
  *
  * The returned string should be freed with free().
  *
  * Return: Allocated string containing the compiled pattern.
  */
-unsigned char*
-string_pat_compile (unsigned char *pat, const char *desc)
+char*
+string_pat_compile (char *pat, const char *desc)
 {
 	const size_t desc_len = strlen (desc);
 	char buf[250];
@@ -69,7 +72,7 @@ string_pat_compile (unsigned char *pat, const char *desc)
 	enum _pat_class class = PAT_CLASS_NONE;
 	
 	size_t j = 0;
-	for (size_t i = 0; i < desc_len; i++ , j++)
+	for (size_t i = 0; i < desc_len; i++, j++)
 	{
 		if (string_match_start (&desc[i], "[:alpha:]"))
 		{
@@ -82,6 +85,10 @@ string_pat_compile (unsigned char *pat, const char *desc)
 		else if (string_match_start (&desc[i], "[:alnum:]"))
 		{
 			class = PAT_CLASS_ALNUM;
+		}
+		else if (string_match_start (&desc[i], "[:print:]"))
+		{
+			class = PAT_CLASS_PRINT;
 		}
 		else
 		{
@@ -107,31 +114,51 @@ string_pat_compile (unsigned char *pat, const char *desc)
 }
 
 static bool
-string_pat_match_char (const char c, const unsigned char **pat_cur)
+string_pat_match_char (const char c, const char **pat_cur, int *flags)
 {
-	// Escape sequence
-	if (**pat_cur == PAT_ESCAPE)
+	// Check for escape sequence
+	if (!((*flags >> PAT_FLAG_ESCAPED) & 0x1) &&
+	    **pat_cur == PAT_ESCAPE)
 	{
 		*pat_cur += 1;
+		*flags |= (1 << PAT_FLAG_ESCAPED);
 	}
 	
+	// Escape sequence
+	if (((*flags >> PAT_FLAG_ESCAPED) & 0x1))
+	{
+		// Compare against the next character
+		if (c == pat_cur[0][1])
+		{
+			*pat_cur += 2;
+			*flags &= ~(1 << PAT_FLAG_ESCAPED);
+			return true;
+		}
+		
+		// Compare against the current class
+		switch (**pat_cur)
+		{
+			case PAT_CLASS_ALPHA:
+				return isalpha (c) != 0;
+			case PAT_CLASS_DIGIT:
+				return isdigit (c) != 0;
+			case PAT_CLASS_ALNUM:
+				return isalnum (c) != 0;
+			case PAT_CLASS_PRINT:
+				return isprint (c) != 0;
+			default:
+				break;
+		}
+	}
+	
+	// Compare against the current character
 	if (c == **pat_cur)
 	{
 		*pat_cur += 1;
+		*flags &= ~(1 << PAT_FLAG_ESCAPED);
 		return true;
 	}
-	
-	switch (**pat_cur)
-	{
-		case PAT_CLASS_ALPHA:
-			return isalpha (c) != 0;
-		case PAT_CLASS_DIGIT:
-			return isdigit (c) != 0;
-		case PAT_CLASS_ALNUM:
-			return isalnum (c) != 0;
-		default:
-			return false;
-	}
+	return false;
 }
 
 /**
@@ -144,21 +171,17 @@ string_pat_match_char (const char c, const unsigned char **pat_cur)
  * Return: True if the pattern matches, otherwise false.
  */
 bool
-string_pat_match (const char *str, const unsigned char *pat)
+string_pat_match (const char *str, const char *pat)
 {
 	const char *str_cur = str;
-	const unsigned char *pat_cur = pat;
+	const char *pat_cur = pat;
+	int flags = 0;
 	
 	while (*str_cur && *pat_cur)
 	{
-		if (!string_pat_match_char (*str_cur, &pat_cur))
+		if (!string_pat_match_char (*str_cur, &pat_cur, &flags))
 		{
-			if (*pat_cur < 200)
-			{
-				return false;
-			}
-			pat_cur++;
-			str_cur--;
+			return false;
 		}
 		str_cur++;
 	}
