@@ -238,6 +238,11 @@ string_pat_match (const char *str, const char *pat)
 		}
 		str_cur++;
 	}
+	
+	if (escaped)
+	{
+		pat_cur++;
+	}
 	// Check if the whole pattern has been parsed
 	return (*str_cur == '\0' && *pat_cur == '\0');
 }
