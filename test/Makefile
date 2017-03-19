@@ -1,5 +1,5 @@
 CC = gcc
-OBJECTS = libstrpat.c test.c
+OBJECTS = ../libstrpat.c test.c
 LIBS =
 CFLAGS = -Wall -Wextra -O2
 BINDIR = $(DESTDIR)/usr/bin
